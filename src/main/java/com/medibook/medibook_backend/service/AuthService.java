@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -40,6 +41,26 @@ public class AuthService {
         this.jwtService = jwtService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
+
+    @Transactional
+    public Map<String, Object> setPassword(SetPasswordRequest request) {
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        // Save encoded password
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        user.setPassword(encodedPassword);
+        userRepository.save(user);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Password set successfully");
+
+        return response;
+    }
+
 
     /**
      * Generate OTP for registration
@@ -85,6 +106,7 @@ public class AuthService {
         response.put("userId", user.getId());
         response.put("role", role.name());
 
+        System.out.println("response in otp generate: "+response);
         return response;
     }
 
@@ -136,50 +158,69 @@ public class AuthService {
      */
     @Transactional
     public Map<String, Object> completePatientProfile(CompletePatientProfileRequest request) {
-        // Find user
+
+        // ---- Fetch user ----
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify role
         if (user.getRole() != User.Role.PATIENT) {
             throw new RuntimeException("User is not a patient");
         }
 
-        // Hash and set password (don't save yet - let cascade handle it)
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        // ---- Update password if provided ----
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+        }
 
-        // Create or update patient profile
+        // ---- Fetch or create patient entity ----
         Patient patient = patientRepository.findById(user.getId()).orElse(null);
 
-        boolean isNewPatient = (patient == null);
-        if (isNewPatient) {
+        if (patient == null) {
             patient = new Patient();
             patient.setUser(user);
             patient.setId(user.getId());
         }
 
-        patient.setDateOfBirth(request.getDateOfBirth());
-        patient.setGender(request.getGender());
-        patient.setBloodGroup(request.getBloodGroup());
-        patient.setPhone(request.getPhone());
-        patient.setAddress(request.getAddress());
-        patient.setCity(request.getCity());
-        patient.setState(request.getState());
-        patient.setCountry(request.getCountry());
-        patient.setPincode(request.getPincode());
-        patient.setIdProofPath(request.getIdProofPath());
+        // ---- Update ONLY fields that are not null ----
+        if (request.getDateOfBirth() != null) patient.setDateOfBirth(request.getDateOfBirth());
+        if (request.getGender() != null) patient.setGender(request.getGender());
+        if (request.getBloodGroup() != null) patient.setBloodGroup(request.getBloodGroup());
+        if (request.getPhone() != null) patient.setPhone(request.getPhone());
+        if (request.getAddress() != null) patient.setAddress(request.getAddress());
+        if (request.getCity() != null) patient.setCity(request.getCity());
+        if (request.getState() != null) patient.setState(request.getState());
+        if (request.getCountry() != null) patient.setCountry(request.getCountry());
+        if (request.getPincode() != null) patient.setPincode(request.getPincode());
 
-        // Save both user and patient
-        userRepository.save(user);
+        // File upload
+        if (request.getIdProofPath() != null) patient.setIdProofPath(request.getIdProofPath());
+
+        // ---- LIFESTYLE ----
+        if (request.getSleepHours() != null) patient.setSleepHours(request.getSleepHours());
+        if (request.getDiet() != null) patient.setDiet(request.getDiet());
+        if (request.getSmoking() != null) patient.setSmoking(request.getSmoking());
+        if (request.getAlcohol() != null) patient.setAlcohol(request.getAlcohol());
+
+        // ---- HEALTH METRICS ----
+        if (request.getSugarLevel() != null) patient.setSugarLevel(request.getSugarLevel());
+        if (request.getBpSys() != null) patient.setBpSys(request.getBpSys());
+        if (request.getBpDia() != null) patient.setBpDia(request.getBpDia());
+        if (request.getSpo2() != null) patient.setSpo2(request.getSpo2());
+        if (request.getHeartRate() != null) patient.setHeartRate(request.getHeartRate());
+
+        // ---- Save patient ----
         patientRepository.save(patient);
 
-        // Return response
+        // ---- Response ----
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("message", "Profile saved. Waiting for admin verification.");
+        response.put("message", "Profile updated successfully");
+        response.put("profileCompleted", true);
 
         return response;
     }
+
 
     /**
      * Complete Doctor Profile
@@ -359,4 +400,61 @@ public class AuthService {
 
         return response;
     }
+
+    public Map<String, Object> getPatientProfile(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Patient patient = patientRepository.findByUserId(userId).orElse(null);
+
+        Map<String, Object> response = new HashMap<>();
+
+        // ---- Basic User Info ----
+        response.put("userId", user.getId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+        response.put("password", user.getPassword());
+        response.put("role", user.getRole());
+        response.put("status", user.getStatus());
+
+        // ---- If patient profile is NOT completed ----
+        if (patient == null) {
+            response.put("profileCompleted", false);
+            response.put("message", "Patient has not completed profile yet");
+            return response;
+        }
+
+        // ---- Mark profile as completed ----
+        response.put("profileCompleted", true);
+
+        // ---- Personal Details ----
+        response.put("dateOfBirth", patient.getDateOfBirth());
+        response.put("gender", patient.getGender());
+        response.put("bloodGroup", patient.getBloodGroup());
+        response.put("phone", patient.getPhone());
+        response.put("address", patient.getAddress());
+        response.put("city", patient.getCity());
+        response.put("state", patient.getState());
+        response.put("country", patient.getCountry());
+        response.put("pincode", patient.getPincode());
+        response.put("idProof", patient.getIdProofPath());
+
+        // ---- Lifestyle Details ----
+        response.put("sleepHours", patient.getSleepHours());
+        response.put("diet", patient.getDiet());
+        response.put("smoking", patient.getSmoking());
+        response.put("alcohol", patient.getAlcohol());
+
+        // ---- Health Metrics ----
+        response.put("sugarLevel", patient.getSugarLevel());
+        response.put("bpSys", patient.getBpSys());
+        response.put("bpDia", patient.getBpDia());
+        response.put("spo2", patient.getSpo2());
+        response.put("heartRate", patient.getHeartRate());
+
+        return response;
+    }
+
+
 }

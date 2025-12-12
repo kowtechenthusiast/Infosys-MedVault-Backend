@@ -1,144 +1,104 @@
 package com.medibook.medibook_backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public class CompletePatientProfileRequest {
 
-    @NotNull(message = "User ID is required")
     private Long userId;
 
-    @NotBlank(message = "Password is required")
-    private String password;
-
-    @NotNull(message = "Date of birth is required")
+    // Basic details
     private LocalDate dateOfBirth;
-
-    @NotBlank(message = "Gender is required")
     private String gender;
-
-    @NotBlank(message = "Blood group is required")
     private String bloodGroup;
-
-    @NotBlank(message = "Phone number is required")
     private String phone;
-
-    @NotBlank(message = "Address is required")
     private String address;
-
-    @NotBlank(message = "City is required")
     private String city;
-
-    @NotBlank(message = "State is required")
     private String state;
-
-    @NotBlank(message = "Country is required")
     private String country;
-
-    @NotBlank(message = "Pincode is required")
     private String pincode;
 
-    private String idProofPath; // Set after file upload
+    // Lifestyle fields
+    private Integer sleepHours;
+    private String diet;
+    private String smoking;
+    private String alcohol;
 
-    // Constructors
-    public CompletePatientProfileRequest() {
-    }
+    // Health metrics
+    private Integer sugarLevel;
+    private Integer bpSys;
+    private Integer bpDia;
+    private Integer spo2;
+    private Integer heartRate;
 
-    // Getters and Setters
-    public Long getUserId() {
-        return userId;
-    }
+    // Password update (optional)
+    private String password;
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    // ID proof file path
+    private String idProofPath;
 
-    public String getPassword() {
-        return password;
-    }
+    public CompletePatientProfileRequest() {}
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    // Getters & Setters
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 
-    public String getGender() {
-        return gender;
-    }
+    public String getBloodGroup() { return bloodGroup; }
+    public void setBloodGroup(String bloodGroup) { this.bloodGroup = bloodGroup; }
 
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public String getBloodGroup() {
-        return bloodGroup;
-    }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
-    public void setBloodGroup(String bloodGroup) {
-        this.bloodGroup = bloodGroup;
-    }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
-    public String getAddress() {
-        return address;
-    }
+    public String getPincode() { return pincode; }
+    public void setPincode(String pincode) { this.pincode = pincode; }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+    public Integer getSleepHours() { return sleepHours; }
+    public void setSleepHours(Integer sleepHours) { this.sleepHours = sleepHours; }
 
-    public String getCity() {
-        return city;
-    }
+    public String getDiet() { return diet; }
+    public void setDiet(String diet) { this.diet = diet; }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
+    public String getSmoking() { return smoking; }
+    public void setSmoking(String smoking) { this.smoking = smoking; }
 
-    public String getState() {
-        return state;
-    }
+    public String getAlcohol() { return alcohol; }
+    public void setAlcohol(String alcohol) { this.alcohol = alcohol; }
 
-    public void setState(String state) {
-        this.state = state;
-    }
+    public Integer getSugarLevel() { return sugarLevel; }
+    public void setSugarLevel(Integer sugarLevel) { this.sugarLevel = sugarLevel; }
 
-    public String getCountry() {
-        return country;
-    }
+    public Integer getBpSys() { return bpSys; }
+    public void setBpSys(Integer bpSys) { this.bpSys = bpSys; }
 
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    public Integer getBpDia() { return bpDia; }
+    public void setBpDia(Integer bpDia) { this.bpDia = bpDia; }
 
-    public String getPincode() {
-        return pincode;
-    }
+    public Integer getSpo2() { return spo2; }
+    public void setSpo2(Integer spo2) { this.spo2 = spo2; }
 
-    public void setPincode(String pincode) {
-        this.pincode = pincode;
-    }
+    public Integer getHeartRate() { return heartRate; }
+    public void setHeartRate(Integer heartRate) { this.heartRate = heartRate; }
 
-    public String getIdProofPath() {
-        return idProofPath;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public void setIdProofPath(String idProofPath) {
-        this.idProofPath = idProofPath;
-    }
+    public String getIdProofPath() { return idProofPath; }
+    public void setIdProofPath(String idProofPath) { this.idProofPath = idProofPath; }
 }
