@@ -90,4 +90,20 @@ public class AuthController {
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    /**
+     * PUT /profile/set-password
+     * set password
+     *
+     */
+    @PutMapping("/set-password")
+    public ResponseEntity<Map<String, Object>> setPassword(@RequestBody SetPasswordRequest request) {
+        try {
+            Map<String, Object> response = authService.setPassword(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }

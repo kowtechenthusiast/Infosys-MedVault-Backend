@@ -10,14 +10,16 @@ import java.time.LocalDateTime;
 public class Patient implements Persistable<Long> {
 
     @Id
-    private Long id; // Same as user.id (one-to-one FK)
+    private Long id; // Same as user.id
 
     @OneToOne
     @MapsId
     @JoinColumn(name = "id")
     private User user;
 
-    // Personal Information
+    // --------------------------
+    // PERSONAL INFO
+    // --------------------------
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
@@ -26,157 +28,166 @@ public class Patient implements Persistable<Long> {
     @Column(name = "blood_group")
     private String bloodGroup;
 
-    // Contact Information
     private String phone;
 
-    // Address Information
     private String address;
-
     private String city;
-
     private String state;
-
     private String country;
-
     private String pincode;
 
-    // Document Upload
+    // --------------------------
+    // DOCUMENT
+    // --------------------------
     @Column(name = "id_proof_path")
-    private String idProofPath; // Aadhar/Passport document path
+    private String idProofPath;
 
-    // Registration Date (auto-set on profile completion)
     @Column(name = "registration_date")
     private LocalDateTime registrationDate;
 
+    // --------------------------
+    // LIFESTYLE INFO (NEW)
+    // --------------------------
+    private Integer sleepHours;   // avg daily sleep
+    private String diet;          // vegetarian, etc.
+    private String smoking;       // never, occasional, etc.
+    private String alcohol;       // consumption habit
+
+    // --------------------------
+    // HEALTH METRICS (NEW)
+    // --------------------------
+    private Integer sugarLevel;   // mg/dL
+    private Integer bpSys;        // systolic BP
+    private Integer bpDia;        // diastolic BP
+    private Integer spo2;         // oxygen %
+    private Integer heartRate;    // BPM
+
+    // --------------------------
     // Constructors
-    public Patient() {
-    }
+    // --------------------------
+    public Patient() {}
 
     public Patient(User user) {
         this.user = user;
         this.id = user.getId();
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    // --------------------------
+    // GETTERS + SETTERS
+    // --------------------------
+    public Long getId() { return id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public User getUser() {
-        return user;
-    }
+    public User getUser() { return user; }
 
     public void setUser(User user) {
         this.user = user;
-        if (user != null) {
-            this.id = user.getId();
-        }
+        if (user != null) this.id = user.getId();
     }
 
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 
-    public String getGender() {
-        return gender;
-    }
+    public String getGender() { return gender; }
 
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
+    public void setGender(String gender) { this.gender = gender; }
 
-    public String getBloodGroup() {
-        return bloodGroup;
-    }
+    public String getBloodGroup() { return bloodGroup; }
 
     public void setBloodGroup(String bloodGroup) {
         this.bloodGroup = bloodGroup;
     }
 
-    public String getPhone() {
-        return phone;
-    }
+    public String getPhone() { return phone; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public String getAddress() {
-        return address;
-    }
+    public String getAddress() { return address; }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+    public void setAddress(String address) { this.address = address; }
 
-    public String getCity() {
-        return city;
-    }
+    public String getCity() { return city; }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
+    public void setCity(String city) { this.city = city; }
 
-    public String getState() {
-        return state;
-    }
+    public String getState() { return state; }
 
-    public void setState(String state) {
-        this.state = state;
-    }
+    public void setState(String state) { this.state = state; }
 
-    public String getCountry() {
-        return country;
-    }
+    public String getCountry() { return country; }
 
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    public void setCountry(String country) { this.country = country; }
 
-    public String getPincode() {
-        return pincode;
-    }
+    public String getPincode() { return pincode; }
 
-    public void setPincode(String pincode) {
-        this.pincode = pincode;
-    }
+    public void setPincode(String pincode) { this.pincode = pincode; }
 
-    public String getIdProofPath() {
-        return idProofPath;
-    }
+    public String getIdProofPath() { return idProofPath; }
 
     public void setIdProofPath(String idProofPath) {
         this.idProofPath = idProofPath;
     }
 
-    public LocalDateTime getRegistrationDate() {
-        return registrationDate;
-    }
+    public LocalDateTime getRegistrationDate() { return registrationDate; }
 
     public void setRegistrationDate(LocalDateTime registrationDate) {
         this.registrationDate = registrationDate;
     }
 
+    // -------- LIFESTYLE ----------
+    public Integer getSleepHours() { return sleepHours; }
+
+    public void setSleepHours(Integer sleepHours) {
+        this.sleepHours = sleepHours;
+    }
+
+    public String getDiet() { return diet; }
+
+    public void setDiet(String diet) { this.diet = diet; }
+
+    public String getSmoking() { return smoking; }
+
+    public void setSmoking(String smoking) { this.smoking = smoking; }
+
+    public String getAlcohol() { return alcohol; }
+
+    public void setAlcohol(String alcohol) { this.alcohol = alcohol; }
+
+    // -------- HEALTH METRICS ----------
+    public Integer getSugarLevel() { return sugarLevel; }
+
+    public void setSugarLevel(Integer sugarLevel) {
+        this.sugarLevel = sugarLevel;
+    }
+
+    public Integer getBpSys() { return bpSys; }
+
+    public void setBpSys(Integer bpSys) { this.bpSys = bpSys; }
+
+    public Integer getBpDia() { return bpDia; }
+
+    public void setBpDia(Integer bpDia) { this.bpDia = bpDia; }
+
+    public Integer getSpo2() { return spo2; }
+
+    public void setSpo2(Integer spo2) { this.spo2 = spo2; }
+
+    public Integer getHeartRate() { return heartRate; }
+
+    public void setHeartRate(Integer heartRate) { this.heartRate = heartRate; }
+
+    // Persistable logic
     @Transient
     private boolean isNew = true;
 
-    // Persistable interface methods
     @Override
-    public boolean isNew() {
-        return isNew;
-    }
+    public boolean isNew() { return isNew; }
 
     @PostLoad
     @PostPersist
-    void markNotNew() {
-        this.isNew = false;
-    }
+    void markNotNew() { this.isNew = false; }
 }
