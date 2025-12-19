@@ -38,6 +38,18 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> register(
+            @Valid @RequestBody RegisterRequest request) {
+        try {
+            return ResponseEntity.ok(authService.register(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+
     /**
      * POST /auth/register-admin
      * Register new Admin (Directly)
@@ -97,10 +109,10 @@ public class AuthController {
      *
      */
     @PutMapping("/set-password")
-    public ResponseEntity<Map<String, Object>> setPassword(@RequestBody SetPasswordRequest request) {
+    public ResponseEntity<Map<String, Object>> setPassword(
+            @Valid @RequestBody SetPasswordRequest request) {
         try {
-            Map<String, Object> response = authService.setPassword(request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(authService.setPassword(request));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "message", e.getMessage()));

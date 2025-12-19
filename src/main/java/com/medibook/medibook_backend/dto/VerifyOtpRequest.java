@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 public class VerifyOtpRequest {
 
-    @NotNull(message = "User ID is required")
-    private Long userId;
+    @NotNull(message = "Email is required")
+    private String email;
 
     @NotBlank(message = "Role is required")
     private String role;
@@ -18,19 +18,19 @@ public class VerifyOtpRequest {
     public VerifyOtpRequest() {
     }
 
-    public VerifyOtpRequest(Long userId, String role, String otp) {
-        this.userId = userId;
+    public VerifyOtpRequest(String email, String role, String otp) {
+        this.email = email;
         this.role = role;
         this.otp = otp;
     }
 
     // Getters and Setters
-    public Long getUserId() {
-        return userId;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getRole() {

@@ -41,7 +41,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                     // Create authority with ROLE_ prefix
-                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.toUpperCase());
+                    String normalizedRole = role.startsWith("ROLE_")
+                            ? role
+                            : "ROLE_" + role.toUpperCase();
+
+                    SimpleGrantedAuthority authority =
+                            new SimpleGrantedAuthority(normalizedRole);
 
                     // Create authentication token with userId as principal
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userId,

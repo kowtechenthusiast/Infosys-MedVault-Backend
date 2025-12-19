@@ -3,6 +3,7 @@ package com.medibook.medibook_backend.config;
 import com.medibook.medibook_backend.security.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -42,16 +43,13 @@ public class SecurityConfig {
 
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - no authentication required
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/profile/**").permitAll()
-                        .requestMatchers("/api/admin/profile").permitAll() // Admin profile completion (no auth needed)
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .anyRequest().permitAll()
+                );
 
-                        // Admin-only endpoints - require ADMIN role
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // All other requests require authentication
-                        .anyRequest().authenticated());
 
         // Add JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

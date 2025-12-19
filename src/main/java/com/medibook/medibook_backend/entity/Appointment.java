@@ -2,55 +2,81 @@ package com.medibook.medibook_backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "appointment")
+@Table(
+        name = "appointment",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"doctor_id", "slot_id"}
+        ),
+        indexes = {
+                @Index(name = "idx_patient", columnList = "patient_id"),
+                @Index(name = "idx_doctor_status", columnList = "doctor_id, status"),
+                @Index(name = "idx_appointment_date", columnList = "appointment_date")
+        }
+)
 public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    /* ================= PATIENT ================= */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
-    @ManyToOne
+    /* ================= DOCTOR ================= */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
+    /* ================= SLOT ================= */
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "slot_id", nullable = false)
+    private DoctorAvailability slot;
+
+    /* ================= SNAPSHOT (CRITICAL) ================= */
+    @Column(name = "appointment_date", nullable = false)
+    private LocalDate appointmentDate;
+
+    @Column(name = "appointment_time", nullable = false)
+    private LocalTime appointmentTime;
+
+    /* ================= STATUS ================= */
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LocalDate date;
+    private Status status = Status.REQUESTED;
 
-    @Column(nullable = false)
-    private LocalTime time;
-
-    @Column(name = "final_report", columnDefinition = "TEXT")
-    private String finalReport;
-
-    @Column(name = "status")
-    private String status = "SCHEDULED"; // SCHEDULED, COMPLETED, CANCELLED
-
-    // Constructors
-    public Appointment() {
+    public enum Status {
+        REQUESTED,   // patient booked
+        CONFIRMED,   // doctor approved
+        REJECTED,    // doctor rejected
+        CANCELLED,   // either party cancelled
+        COMPLETED    // after appointment time
     }
 
-    public Appointment(Patient patient, Doctor doctor, LocalDate date, LocalTime time) {
-        this.patient = patient;
-        this.doctor = doctor;
-        this.date = date;
-        this.time = time;
-        this.status = "SCHEDULED";
+    /* ================= CANCELLATION INFO ================= */
+    private LocalDateTime cancelledAt;
+
+    @Column(length = 255)
+    private String cancellationReason;
+
+    /* ================= AUDIT ================= */
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    /* ================= GETTERS & SETTERS ================= */
+
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public Patient getPatient() {
@@ -69,35 +95,55 @@ public class Appointment {
         this.doctor = doctor;
     }
 
-    public LocalDate getDate() {
-        return date;
+    public DoctorAvailability getSlot() {
+        return slot;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setSlot(DoctorAvailability slot) {
+        this.slot = slot;
     }
 
-    public LocalTime getTime() {
-        return time;
+    public LocalDate getAppointmentDate() {
+        return appointmentDate;
     }
 
-    public void setTime(LocalTime time) {
-        this.time = time;
+    public void setAppointmentDate(LocalDate appointmentDate) {
+        this.appointmentDate = appointmentDate;
     }
 
-    public String getFinalReport() {
-        return finalReport;
+    public LocalTime getAppointmentTime() {
+        return appointmentTime;
     }
 
-    public void setFinalReport(String finalReport) {
-        this.finalReport = finalReport;
+    public void setAppointmentTime(LocalTime appointmentTime) {
+        this.appointmentTime = appointmentTime;
     }
 
-    public String getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
