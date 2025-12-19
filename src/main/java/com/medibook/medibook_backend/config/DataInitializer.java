@@ -35,7 +35,7 @@ public class DataInitializer implements CommandLineRunner {
         if (adminRepository.count() == 0) {
             log.info("Seeding default System Admin...");
 
-            String email = "chmounyasri@gmail.com";
+            String email = "kowshikk606@gmail.com";
             User user = userRepository.findByEmail(email).orElse(null);
 
             if (user == null) {

@@ -2,80 +2,98 @@ package com.medibook.medibook_backend.entity;
 
 import jakarta.persistence.*;
 import org.springframework.data.domain.Persistable;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "doctor")
 public class Doctor implements Persistable<Long> {
 
+    /* ================= PRIMARY KEY ================= */
     @Id
-    private Long id; // Same as user.id (one-to-one FK)
+    private Long id; // Same as user.id
 
-    @OneToOne
+    @OneToOne(optional = false)
     @MapsId
     @JoinColumn(name = "id")
     private User user;
 
-    // Personal Information
+    /* ================= PERSONAL INFO ================= */
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     private String gender;
 
-    @Column(name = "profile_photo_path")
-    private String profilePhotoPath;
+    /* ================= CONTACT ================= */
+    private String phone;
 
-    // Professional Information
+    /* ================= PROFESSIONAL INFO ================= */
     @Column(name = "medical_registration_number", unique = true)
     private String medicalRegistrationNumber;
 
     @Column(name = "licensing_authority")
     private String licensingAuthority;
 
+    @Column(name = "specialization")
     private String specialization;
 
+    @Column(name = "qualification")
     private String qualification;
 
-    private Integer experience; // years of experience
+    private Integer experience; // years
 
-    // Contact Information
-    private String phone;
-
-    // Clinic/Practice Information
+    /* ================= CLINIC INFO ================= */
     @Column(name = "clinic_hospital_name")
     private String clinicHospitalName;
 
     private String city;
-
     private String state;
-
     private String country;
-
     private String pincode;
 
-    // Document Uploads
+    /* ================= DOCUMENTS ================= */
     @Column(name = "medical_license_path")
-    private String medicalLicensePath; // Medical license document
+    private String medicalLicensePath;
 
-    @Column(name = "degree_certificates_path")
-    private String degreeCertificatesPath; // Degree certificates
+    @Column(name = "consultationFee")
+    private Integer consultationFee;
 
-    // Constructors
-    public Doctor() {
-    }
+    @Column(name = "acceptingAppointments")
+    private Boolean acceptingAppointments = true;
+
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
+
+
+    /* ================= JPA STATE ================= */
+    @Transient
+    private boolean isNew = true;
+
+    /* ================= CONSTRUCTORS ================= */
+    public Doctor() {}
 
     public Doctor(User user) {
         this.user = user;
         this.id = user.getId();
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
+    /* ================= PERSISTABLE ================= */
+    @Override
+    public boolean isNew() {
+        return isNew;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.isNew = false;
+    }
+
+    /* ================= GETTERS & SETTERS ================= */
+
+    public Long getId() {
+        return id;
     }
 
     public User getUser() {
@@ -84,9 +102,7 @@ public class Doctor implements Persistable<Long> {
 
     public void setUser(User user) {
         this.user = user;
-        if (user != null) {
-            this.id = user.getId();
-        }
+        if (user != null) this.id = user.getId();
     }
 
     public LocalDate getDateOfBirth() {
@@ -105,12 +121,12 @@ public class Doctor implements Persistable<Long> {
         this.gender = gender;
     }
 
-    public String getProfilePhotoPath() {
-        return profilePhotoPath;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setProfilePhotoPath(String profilePhotoPath) {
-        this.profilePhotoPath = profilePhotoPath;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getMedicalRegistrationNumber() {
@@ -151,14 +167,6 @@ public class Doctor implements Persistable<Long> {
 
     public void setExperience(Integer experience) {
         this.experience = experience;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getClinicHospitalName() {
@@ -209,26 +217,11 @@ public class Doctor implements Persistable<Long> {
         this.medicalLicensePath = medicalLicensePath;
     }
 
-    public String getDegreeCertificatesPath() {
-        return degreeCertificatesPath;
+    public Integer getConsultationFee(){
+        return consultationFee;
     }
 
-    public void setDegreeCertificatesPath(String degreeCertificatesPath) {
-        this.degreeCertificatesPath = degreeCertificatesPath;
-    }
-
-    @Transient
-    private boolean isNew = true;
-
-    // Persistable interface methods
-    @Override
-    public boolean isNew() {
-        return isNew;
-    }
-
-    @PostLoad
-    @PostPersist
-    void markNotNew() {
-        this.isNew = false;
+    public void setConsultationFee(Integer consultationFee){
+        this.consultationFee = consultationFee;
     }
 }

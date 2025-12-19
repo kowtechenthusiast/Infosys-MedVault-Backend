@@ -66,23 +66,24 @@ public class AdminService {
                     userInfo.put("registrationDate", patient.getRegistrationDate());
                 });
             } else if (user.getRole() == User.Role.DOCTOR) {
-                doctorRepository.findByUserId(user.getId()).ifPresent(doctor -> {
+                doctorRepository.findById(user.getId()).ifPresent(doctor -> {
                     userInfo.put("dateOfBirth", doctor.getDateOfBirth());
                     userInfo.put("gender", doctor.getGender());
-                    userInfo.put("profilePhotoPath", doctor.getProfilePhotoPath());
+                    userInfo.put("phone", doctor.getPhone());
+
                     userInfo.put("medicalRegistrationNumber", doctor.getMedicalRegistrationNumber());
                     userInfo.put("licensingAuthority", doctor.getLicensingAuthority());
                     userInfo.put("specialization", doctor.getSpecialization());
                     userInfo.put("qualification", doctor.getQualification());
                     userInfo.put("experience", doctor.getExperience());
-                    userInfo.put("phone", doctor.getPhone());
+
                     userInfo.put("clinicHospitalName", doctor.getClinicHospitalName());
                     userInfo.put("city", doctor.getCity());
                     userInfo.put("state", doctor.getState());
                     userInfo.put("country", doctor.getCountry());
                     userInfo.put("pincode", doctor.getPincode());
+
                     userInfo.put("medicalLicensePath", doctor.getMedicalLicensePath());
-                    userInfo.put("degreeCertificatesPath", doctor.getDegreeCertificatesPath());
                 });
             } else if (user.getRole() == User.Role.ADMIN) {
                 adminRepository.findByUserId(user.getId()).ifPresent(admin -> {
@@ -129,6 +130,7 @@ public class AdminService {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "Verification approved successfully.");
+        response.put("status", "APPROVED");
 
         return response;
     }
@@ -147,6 +149,7 @@ public class AdminService {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false); // Per requirement for denial
         response.put("message", "Verification request denied by admin.");
+        response.put("status", "REJECTED");
 
         return response;
     }

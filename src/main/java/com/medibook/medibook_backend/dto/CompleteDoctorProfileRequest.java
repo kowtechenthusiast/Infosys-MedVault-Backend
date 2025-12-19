@@ -53,6 +53,8 @@ public class CompleteDoctorProfileRequest {
     @NotBlank(message = "Pincode is required")
     private String pincode;
 
+    private Integer consultationFee;
+
     private String medicalLicensePath; // Set after file upload
 
     private String degreeCertificatesPath; // Set after file upload
@@ -188,6 +190,14 @@ public class CompleteDoctorProfileRequest {
 
     public void setPincode(String pincode) {
         this.pincode = pincode;
+    }
+
+    public Integer getConsultationFee() {
+        return consultationFee;
+    }
+
+    public void setConsultationFee(Integer consultationFee) {
+        this.consultationFee = consultationFee;
     }
 
     public String getMedicalLicensePath() {

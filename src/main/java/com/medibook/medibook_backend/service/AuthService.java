@@ -11,10 +11,8 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class AuthService {
@@ -45,21 +43,34 @@ public class AuthService {
     @Transactional
     public Map<String, Object> setPassword(SetPasswordRequest request) {
 
-        User user = userRepository.findById(request.getUserId())
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (user.getStatus() != VerificationStatus.ACTIVE) {
+            throw new RuntimeException("Email not verified");
+        }
 
-        // Save encoded password
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        user.setPassword(encodedPassword);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setStatus(VerificationStatus.ACTIVE);
         userRepository.save(user);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Password set successfully");
+        // ✅ Create role-specific entity
+        if (user.getRole() == User.Role.PATIENT &&
+                !patientRepository.existsByUserId(user.getId())) {
+            patientRepository.save(new Patient(user));
+        }
 
-        return response;
+        if (user.getRole() == User.Role.DOCTOR &&
+                !doctorRepository.existsByUserId(user.getId())) {
+            doctorRepository.save(new Doctor(user));
+        }
+
+        return Map.of(
+                "success", true,
+                "message", "Account created successfully"
+        );
     }
+
 
 
     /**
@@ -67,47 +78,41 @@ public class AuthService {
      */
     @Transactional
     public Map<String, Object> generateOtp(GenerateOtpRequest request) {
-        // Validate role
-        User.Role role;
-        try {
-            role = User.Role.valueOf(request.getRole().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid role. Must be ADMIN, PATIENT, or DOCTOR");
-        }
 
-        // Check if email already exists
+        User.Role role = User.Role.valueOf(request.getRole().toUpperCase());
+
+        // ❗ Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-
             throw new RuntimeException("Email already in use");
         }
 
-        // Create new user with PENDING status
-        User user = new User(request.getName(), request.getEmail(), role);
-        user.setStatus(VerificationStatus.PENDING);
-        user = userRepository.save(user);
+        // Generate OTP
+        String otpCode = String.format("%05d",
+                new Random().nextInt(90000) + 10000);
 
-        // Generate 5-digit OTP
-        String otpCode = String.format("%05d", new Random().nextInt(90000) + 10000);
+        // Delete previous OTPs for same email + role
+        otpRepository.deleteByEmailAndRole(request.getEmail(), role);
 
-        // Delete any existing OTP for this user+role combination
-        otpRepository.deleteByUserIdAndRole(user.getId(), role);
+        // Save OTP
+        Otp otp = new Otp();
+        otp.setEmail(request.getEmail());
+        otp.setRole(role);
+        otp.setOtpCode(otpCode);
+        otp.setUsed(false);
+        otp.setCreatedAt(LocalDateTime.now());
+        otpRepository.save(otp);
 
-        // Create new OTP with emailOrPhone field
-        Otp otp = new Otp(user.getId(), request.getEmail(), role, otpCode);
-        otp = otpRepository.save(otp);
+        // Send email
+        emailService.sendOtpEmail(
+                request.getEmail(),
+                request.getName(),
+                otpCode
+        );
 
-        // Send OTP email
-        emailService.sendOtpEmail(user.getEmail(), user.getName(), otpCode);
-
-        // Return response
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "OTP sent to your email");
-        response.put("userId", user.getId());
-        response.put("role", role.name());
-
-        System.out.println("response in otp generate: "+response);
-        return response;
+        return Map.of(
+                "success", true,
+                "message", "OTP sent successfully"
+        );
     }
 
     /**
@@ -115,43 +120,71 @@ public class AuthService {
      */
     @Transactional
     public Map<String, Object> verifyOtp(VerifyOtpRequest request) {
-        // Validate role
-        User.Role role;
-        try {
-            role = User.Role.valueOf(request.getRole().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid role");
+
+        User.Role role = User.Role.valueOf(request.getRole().toUpperCase());
+
+        Otp otp = otpRepository
+                .findTopByEmailAndRoleAndUsedFalseOrderByCreatedAtDesc(
+                        request.getEmail(), role
+                )
+                .orElseThrow(() -> new RuntimeException("Invalid or expired OTP"));
+
+        if (otp.isExpired() || !otp.getOtpCode().equals(request.getOtp())) {
+            throw new RuntimeException("Invalid or expired OTP");
         }
 
-        // Find OTP record that is not used
-        Otp otp = otpRepository.findByUserIdAndRoleAndUsedFalse(request.getUserId(), role)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired OTP. Please request a new one."));
-
-        // Check if expired (10 minutes)
-        if (otp.isExpired()) {
-
-            throw new RuntimeException("Invalid or expired OTP. Please request a new one.");
-        }
-
-        // Validate OTP code
-        if (!otp.getOtpCode().equals(request.getOtp())) {
-
-            throw new RuntimeException("Invalid or expired OTP. Please request a new one.");
-        }
-
-        // Mark OTP as used instead of deleting
         otp.setUsed(true);
         otpRepository.save(otp);
 
-        // Return success response
+        return Map.of(
+                "success", true,
+                "message", "OTP verified"
+        );
+    }
+
+    @Transactional
+    public Map<String, Object> register(RegisterRequest request) {
+
+        User.Role role = User.Role.valueOf(request.getRole().toUpperCase());
+
+        // Ensure OTP was verified
+        if (!otpRepository.existsByEmailAndRoleAndUsedTrue(
+                request.getEmail(), role)) {
+            throw new RuntimeException("Email not verified");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already registered");
+        }
+
+        User user = new User(
+                request.getName(),
+                request.getEmail(),
+                role
+        );
+
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setStatus(VerificationStatus.PENDING);
+        userRepository.save(user);
+
+        // Create role-specific row
+        if (role == User.Role.PATIENT) {
+            patientRepository.save(new Patient(user));
+        } else if (role == User.Role.DOCTOR) {
+            doctorRepository.save(new Doctor(user));
+        }
+
         Map<String, Object> response = new HashMap<>();
+
+        response.put("role", user.getRole().name());
+        response.put("userId", user.getId());
         response.put("success", true);
-        response.put("message", "OTP verified. Complete your profile.");
-        response.put("userId", request.getUserId());
-        response.put("role", role.name());
+        response.put("message", "Registration successful");
 
         return response;
     }
+
+
 
     /**
      * Complete Patient Profile
@@ -227,31 +260,22 @@ public class AuthService {
      */
     @Transactional
     public Map<String, Object> completeDoctorProfile(CompleteDoctorProfileRequest request) {
-        // Find user
+
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify role
         if (user.getRole() != User.Role.DOCTOR) {
             throw new RuntimeException("User is not a doctor");
         }
 
-        // Hash and set password
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        // Create or update doctor profile
         Doctor doctor = doctorRepository.findById(user.getId()).orElse(null);
 
-        boolean isNewDoctor = (doctor == null);
-        if (isNewDoctor) {
-            doctor = new Doctor();
-            doctor.setUser(user);
-            doctor.setId(user.getId());
+        if (doctor == null) {
+            doctor = new Doctor(user);
         }
 
         doctor.setDateOfBirth(request.getDateOfBirth());
         doctor.setGender(request.getGender());
-        doctor.setProfilePhotoPath(request.getProfilePhotoPath());
         doctor.setMedicalRegistrationNumber(request.getMedicalRegistrationNumber());
         doctor.setLicensingAuthority(request.getLicensingAuthority());
         doctor.setSpecialization(request.getSpecialization());
@@ -263,19 +287,18 @@ public class AuthService {
         doctor.setState(request.getState());
         doctor.setCountry(request.getCountry());
         doctor.setPincode(request.getPincode());
-        doctor.setMedicalLicensePath(request.getMedicalLicensePath());
-        doctor.setDegreeCertificatesPath(request.getDegreeCertificatesPath());
+        doctor.setConsultationFee(request.getConsultationFee());
 
-        // Save both user and doctor
-        userRepository.save(user);
+        if (request.getMedicalLicensePath() != null) {
+            doctor.setMedicalLicensePath(request.getMedicalLicensePath());
+        }
+
         doctorRepository.save(doctor);
 
-        // Return response
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Profile saved. Waiting for admin verification.");
-
-        return response;
+        return Map.of(
+                "success", true,
+                "message", "Doctor profile updated successfully"
+        );
     }
 
     /**
@@ -377,10 +400,10 @@ public class AuthService {
         }
 
         // Check if account is active
-        if (user.getStatus() != VerificationStatus.ACTIVE) {
-
-            throw new DisabledException("Your account is under verification. Please wait for approval.");
-        }
+//        if (user.getStatus() != VerificationStatus.ACTIVE) {
+//
+//            throw new DisabledException("Your account is under verification. Please wait for approval.");
+//        }
 
         // Also check if admin is deleted (soft delete logic for admins)
         if (user.getRole() == User.Role.ADMIN) {
@@ -397,6 +420,11 @@ public class AuthService {
         response.put("token", token);
         response.put("role", user.getRole().name());
         response.put("userId", user.getId());
+        if (user.getStatus() != VerificationStatus.ACTIVE){
+            response.put("status", "PENDING");
+        }else{
+            response.put("status", "ACTIVE");
+        }
 
         return response;
     }
@@ -455,6 +483,179 @@ public class AuthService {
 
         return response;
     }
+    public Map<String, Object> getDoctorProfile(Long userId) {
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (user.getRole() != User.Role.DOCTOR) {
+            throw new RuntimeException("User is not a doctor");
+        }
+
+        Doctor doctor = doctorRepository.findById(userId).orElse(null);
+
+        Map<String, Object> response = new HashMap<>();
+
+        /* ---------- BASIC USER INFO ---------- */
+        response.put("userId", user.getId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+        response.put("role", user.getRole());
+        response.put("status", user.getStatus());
+
+        /* ---------- PROFILE NOT COMPLETED ---------- */
+        if (doctor == null) {
+            response.put("profileCompleted", false);
+            response.put("message", "Doctor has not completed profile yet");
+            return response;
+        }
+
+        response.put("profileCompleted", true);
+
+        /* ---------- PERSONAL INFO ---------- */
+        response.put("dateOfBirth", doctor.getDateOfBirth());
+        response.put("gender", doctor.getGender());
+        response.put("phone", doctor.getPhone());
+
+        /* ---------- PROFESSIONAL INFO ---------- */
+        response.put("medicalRegistrationNumber", doctor.getMedicalRegistrationNumber());
+        response.put("licensingAuthority", doctor.getLicensingAuthority());
+        response.put("specialization", doctor.getSpecialization());
+        response.put("qualification", doctor.getQualification());
+        response.put("experience", doctor.getExperience());
+        response.put("consultationFee", doctor.getConsultationFee());
+
+        /* ---------- CLINIC INFO ---------- */
+        response.put("clinicHospitalName", doctor.getClinicHospitalName());
+        response.put("city", doctor.getCity());
+        response.put("state", doctor.getState());
+        response.put("country", doctor.getCountry());
+        response.put("pincode", doctor.getPincode());
+
+        /* ---------- DOCUMENT ---------- */
+        response.put("medicalLicense", doctor.getMedicalLicensePath());
+
+        return response;
+    }
+
+    public List<Map<String, Object>> getPendingPatients() {
+
+        List<Patient> pendingPatients = patientRepository.findAllPendingPatientsWithBasicInfo();
+
+        return pendingPatients.stream().map(patient -> {
+            User user = patient.getUser();
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("userId", user.getId());
+            map.put("name", user.getName());
+            map.put("email", user.getEmail());
+            map.put("status", user.getStatus());
+            map.put("role", user.getRole());
+
+            // Basic Personal Info
+            map.put("dateOfBirth", patient.getDateOfBirth());
+            map.put("gender", patient.getGender());
+            map.put("bloodGroup", patient.getBloodGroup());
+            map.put("phone", patient.getPhone());
+            map.put("address", patient.getAddress());
+            map.put("city", patient.getCity());
+            map.put("state", patient.getState());
+            map.put("country", patient.getCountry());
+            map.put("pincode", patient.getPincode());
+
+            // Optional fields
+            map.put("idProof", patient.getIdProofPath());
+            map.put("registrationDate", patient.getRegistrationDate());
+
+            return map;
+        }).toList();
+    }
+
+    public List<Map<String, Object>> getPendingDoctors() {
+
+        List<Doctor> pendingDoctors =
+                doctorRepository.findAllPendingDoctorsWithBasicInfo();
+
+        return pendingDoctors.stream().map(doctor -> {
+            User user = doctor.getUser();
+
+            Map<String, Object> map = new HashMap<>();
+
+            // User Info
+            map.put("userId", user.getId());
+            map.put("name", user.getName());
+            map.put("email", user.getEmail());
+            map.put("status", user.getStatus());
+            map.put("role", user.getRole());
+
+            // Personal Info
+            map.put("dateOfBirth", doctor.getDateOfBirth());
+            map.put("gender", doctor.getGender());
+            map.put("phone", doctor.getPhone());
+
+            // Professional Info
+            map.put("medicalRegistrationNumber", doctor.getMedicalRegistrationNumber());
+            map.put("licensingAuthority", doctor.getLicensingAuthority());
+            map.put("specialization", doctor.getSpecialization());
+            map.put("qualification", doctor.getQualification());
+            map.put("experience", doctor.getExperience());
+            map.put("consultationFee", doctor.getConsultationFee());
+
+            // Clinic Info
+            map.put("clinicHospitalName", doctor.getClinicHospitalName());
+            map.put("city", doctor.getCity());
+            map.put("state", doctor.getState());
+            map.put("country", doctor.getCountry());
+            map.put("pincode", doctor.getPincode());
+
+            // Documents
+            map.put("medicalLicense", doctor.getMedicalLicensePath());
+
+            return map;
+        }).toList();
+    }
+
+    public List<Map<String, Object>> geDoctorsList() {
+
+        List<Doctor> pendingDoctors =
+                doctorRepository.findAllDoctors();
+
+        return pendingDoctors.stream().map(doctor -> {
+            User user = doctor.getUser();
+
+            Map<String, Object> map = new HashMap<>();
+
+            // User Info
+            map.put("userId", user.getId());
+            map.put("name", user.getName());
+            map.put("email", user.getEmail());
+            map.put("status", user.getStatus());
+            map.put("role", user.getRole());
+
+            // Personal Info
+            map.put("dateOfBirth", doctor.getDateOfBirth());
+            map.put("gender", doctor.getGender());
+            map.put("phone", doctor.getPhone());
+
+            // Professional Info
+            map.put("medicalRegistrationNumber", doctor.getMedicalRegistrationNumber());
+            map.put("licensingAuthority", doctor.getLicensingAuthority());
+            map.put("specialization", doctor.getSpecialization());
+            map.put("qualification", doctor.getQualification());
+            map.put("experience", doctor.getExperience());
+            map.put("consultationFee", doctor.getConsultationFee());
+
+            // Clinic Info
+            map.put("clinicHospitalName", doctor.getClinicHospitalName());
+            map.put("city", doctor.getCity());
+            map.put("state", doctor.getState());
+            map.put("country", doctor.getCountry());
+            map.put("pincode", doctor.getPincode());
+
+            // Documents
+            map.put("medicalLicense", doctor.getMedicalLicensePath());
+
+            return map;
+        }).toList();
+    }
 }

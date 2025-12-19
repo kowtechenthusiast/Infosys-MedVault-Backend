@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "otp")
+@Table(
+        name = "otp",
+        indexes = {
+                @Index(name = "idx_otp_email_role", columnList = "email_or_phone, role")
+        }
+)
 public class Otp {
 
     @Id
@@ -12,13 +17,10 @@ public class Otp {
     private Long id;
 
     @Column(name = "email_or_phone", nullable = false)
-    private String emailOrPhone;
+    private String email;
 
-    @Column(name = "user_id")
-    private Long userId;
-
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private User.Role role;
 
     @Column(name = "otp_code", nullable = false, length = 5)
@@ -33,43 +35,29 @@ public class Otp {
     @Column(nullable = false)
     private boolean used = false;
 
-    // Constructors
-    public Otp() {
-    }
+    // -------- Constructors --------
+    public Otp() {}
 
-    public Otp(Long userId, String emailOrPhone, User.Role role, String otpCode) {
-        this.userId = userId;
-        this.emailOrPhone = emailOrPhone;
+    public Otp(String email, User.Role role, String otpCode) {
+        this.email = email;
         this.role = role;
         this.otpCode = otpCode;
         this.createdAt = LocalDateTime.now();
-        this.expiresAt = LocalDateTime.now().plusMinutes(10);
+        this.expiresAt = this.createdAt.plusMinutes(10);
         this.used = false;
     }
 
-    // Getters and Setters
+    // -------- Getters & Setters --------
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public String getEmail() {
+        return email;
     }
 
-    public String getEmailOrPhone() {
-        return emailOrPhone;
-    }
-
-    public void setEmailOrPhone(String emailOrPhone) {
-        this.emailOrPhone = emailOrPhone;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public User.Role getRole() {
@@ -94,14 +82,11 @@ public class Otp {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+        this.expiresAt = createdAt.plusMinutes(10);
     }
 
     public LocalDateTime getExpiresAt() {
         return expiresAt;
-    }
-
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
     }
 
     public boolean isUsed() {
