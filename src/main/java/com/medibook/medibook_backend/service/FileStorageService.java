@@ -31,6 +31,8 @@ public class FileStorageService {
             Files.createDirectories(Paths.get(fileStorageProperties.getAdminCertDir()));
             Files.createDirectories(Paths.get(fileStorageProperties.getDoctorCertDir()));
             Files.createDirectories(Paths.get(fileStorageProperties.getPatientIdProofDir()));
+            Files.createDirectories(Paths.get(fileStorageProperties.getMedicalRecordsDir()));
+
             log.info("File storage directories initialized successfully");
         } catch (IOException e) {
             log.error("Could not initialize file storage directories", e);
@@ -49,6 +51,25 @@ public class FileStorageService {
     public String savePatientIdProof(MultipartFile file) {
         return saveFile(file, fileStorageProperties.getPatientIdProofDir(), "patient-id-proofs");
     }
+
+    public String saveMedicalRecord(MultipartFile file) {
+        return saveFile(
+                file,
+                fileStorageProperties.getMedicalRecordsDir(),
+                "medical-records"
+        );
+    }
+    public void deleteFile(String filePath) {
+        try {
+            Path path = Paths.get(fileStorageProperties.getBaseDir())
+                    .resolve(filePath.replace("/files/", ""));
+            Files.deleteIfExists(path);
+        } catch (Exception e) {
+            log.warn("Could not delete file {}", filePath);
+        }
+    }
+
+
 
     private String saveFile(MultipartFile file, String directory, String urlPath) {
         try {

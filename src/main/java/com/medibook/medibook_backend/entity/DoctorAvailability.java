@@ -1,20 +1,18 @@
+
 package com.medibook.medibook_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(
         name = "doctor_availability",
         uniqueConstraints = @UniqueConstraint(
                 columnNames = {"doctor_id", "slot_date", "start_time"}
-        ),
-        indexes = {
-                @Index(name = "idx_doctor_date", columnList = "doctor_id, slot_date"),
-                @Index(name = "idx_slot_status", columnList = "status")
-        }
+        )
 )
 public class DoctorAvailability {
 
@@ -22,49 +20,35 @@ public class DoctorAvailability {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /* ================= DOCTOR ================= */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "doctor_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     private Doctor doctor;
 
-    /* ================= SLOT DATE & TIME ================= */
-    @Column(name = "slot_date", nullable = false)
     private LocalDate slotDate;
-
-    @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
-
-    @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
-    /* ================= SLOT DURATION ================= */
-    @Column(name = "duration_minutes", nullable = false)
-    private Integer durationMinutes;
-
-    /* ================= SLOT STATUS ================= */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private SlotStatus status = SlotStatus.OPEN;
 
+
+    @OneToOne(mappedBy = "slot", fetch = FetchType.LAZY)
+    @JsonIgnore   // ✅ THIS IS THE KEY
+    private Appointment appointment;
+
+
+
     public enum SlotStatus {
-        OPEN,      // visible & bookable
-        BOOKED,    // appointment exists
-        BLOCKED    // doctor manually blocked
+        OPEN, BOOKED, BLOCKED
     }
 
-    /* ================= AUDIT ================= */
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    /* ================= GETTERS & SETTERS ================= */
-
+    // getters & setters
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Doctor getDoctor() {
@@ -99,14 +83,6 @@ public class DoctorAvailability {
         this.endTime = endTime;
     }
 
-    public Integer getDurationMinutes() {
-        return durationMinutes;
-    }
-
-    public void setDurationMinutes(Integer durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
     public SlotStatus getStatus() {
         return status;
     }
@@ -115,7 +91,12 @@ public class DoctorAvailability {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public Appointment getAppointment() {
+        return appointment;
     }
+
+    public void setAppointment(Appointment appointment) {
+        this.appointment = appointment;
+    }
+
 }

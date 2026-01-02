@@ -11,6 +11,8 @@ public class FileStorageProperties {
     private String adminCertDir = "uploads/admin-certificates";
     private String doctorCertDir = "uploads/doctor-certificates";
     private String patientIdProofDir = "uploads/patient-id-proofs";
+    private String medicalRecordsDir;
+
 
     public String getBaseDir() {
         return baseDir;
@@ -43,4 +45,12 @@ public class FileStorageProperties {
     public void setPatientIdProofDir(String patientIdProofDir) {
         this.patientIdProofDir = patientIdProofDir;
     }
+
+    public String getMedicalRecordsDir() {
+        return  medicalRecordsDir;
+    }
+    public void setMedicalRecordsDir(String medicalRecordsDir) {
+        this.medicalRecordsDir = medicalRecordsDir;
+    }
+
 }
