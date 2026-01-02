@@ -90,18 +90,42 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
+
+        System.out.println("➡️ /login API called");
+        System.out.println("Email received: " + request.getEmail());
+
         try {
             Map<String, Object> response = authService.login(request);
+
+            System.out.println("✅ Login API success for email: " + request.getEmail());
+            System.out.println("Role: " + response.get("role"));
+            System.out.println("User ID: " + response.get("userId"));
+
             return ResponseEntity.ok(response);
+
         } catch (RuntimeException e) {
-            if (e.getMessage().contains("not verified")) {
+
+            System.out.println("❌ Login API failed for email: " + request.getEmail());
+            System.out.println("Error message: " + e.getMessage());
+
+            if (e.getMessage() != null && e.getMessage().contains("not verified")) {
+                System.out.println("⛔ Account not verified");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("success", false, "message", e.getMessage()));
+                        .body(Map.of(
+                                "success", false,
+                                "message", e.getMessage()
+                        ));
             }
+
+            System.out.println("⛔ Unauthorized login attempt");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "message", e.getMessage()));
+                    .body(Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    ));
         }
     }
+
 
     /**
      * PUT /profile/set-password

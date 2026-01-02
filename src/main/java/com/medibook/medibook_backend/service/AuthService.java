@@ -192,7 +192,6 @@ public class AuthService {
     @Transactional
     public Map<String, Object> completePatientProfile(CompletePatientProfileRequest request) {
 
-        // ---- Fetch user ----
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -200,13 +199,6 @@ public class AuthService {
             throw new RuntimeException("User is not a patient");
         }
 
-        // ---- Update password if provided ----
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            userRepository.save(user);
-        }
-
-        // ---- Fetch or create patient entity ----
         Patient patient = patientRepository.findById(user.getId()).orElse(null);
 
         if (patient == null) {
@@ -215,7 +207,7 @@ public class AuthService {
             patient.setId(user.getId());
         }
 
-        // ---- Update ONLY fields that are not null ----
+        // Update Basic Details
         if (request.getDateOfBirth() != null) patient.setDateOfBirth(request.getDateOfBirth());
         if (request.getGender() != null) patient.setGender(request.getGender());
         if (request.getBloodGroup() != null) patient.setBloodGroup(request.getBloodGroup());
@@ -226,34 +218,32 @@ public class AuthService {
         if (request.getCountry() != null) patient.setCountry(request.getCountry());
         if (request.getPincode() != null) patient.setPincode(request.getPincode());
 
-        // File upload
-        if (request.getIdProofPath() != null) patient.setIdProofPath(request.getIdProofPath());
-
-        // ---- LIFESTYLE ----
+        // Update Lifestyle
         if (request.getSleepHours() != null) patient.setSleepHours(request.getSleepHours());
         if (request.getDiet() != null) patient.setDiet(request.getDiet());
         if (request.getSmoking() != null) patient.setSmoking(request.getSmoking());
         if (request.getAlcohol() != null) patient.setAlcohol(request.getAlcohol());
 
-        // ---- HEALTH METRICS ----
+        // Update Health Metrics
         if (request.getSugarLevel() != null) patient.setSugarLevel(request.getSugarLevel());
         if (request.getBpSys() != null) patient.setBpSys(request.getBpSys());
         if (request.getBpDia() != null) patient.setBpDia(request.getBpDia());
         if (request.getSpo2() != null) patient.setSpo2(request.getSpo2());
         if (request.getHeartRate() != null) patient.setHeartRate(request.getHeartRate());
 
-        // ---- Save patient ----
+        // Update ID Proof Path only if a new file was uploaded
+        if (request.getIdProofPath() != null) {
+            patient.setIdProofPath(request.getIdProofPath());
+        }
+
         patientRepository.save(patient);
 
-        // ---- Response ----
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Profile updated successfully");
-        response.put("profileCompleted", true);
-
-        return response;
+        return Map.of(
+                "success", true,
+                "message", "Profile updated successfully",
+                "profileCompleted", true
+        );
     }
-
 
     /**
      * Complete Doctor Profile
@@ -387,47 +377,56 @@ public class AuthService {
      * Login
      */
     public Map<String, Object> login(LoginRequest request) {
+
+        System.out.println("🔐 Login attempt started");
+        System.out.println("Email received: " + request.getEmail());
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
-
+                    System.out.println("❌ User not found for email: " + request.getEmail());
                     return new BadCredentialsException("Incorrect email or password.");
                 });
 
-        // Verify password
-        if (user.getPassword() == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        System.out.println("✅ User found. User ID: " + user.getId());
+        System.out.println("User role: " + user.getRole());
 
+        // Verify password
+        if (user.getPassword() == null ||
+                !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+
+            System.out.println("❌ Password mismatch for user ID: " + user.getId());
             throw new BadCredentialsException("Incorrect email or password.");
         }
 
-        // Check if account is active
-//        if (user.getStatus() != VerificationStatus.ACTIVE) {
-//
-//            throw new DisabledException("Your account is under verification. Please wait for approval.");
-//        }
+        System.out.println("✅ Password verified");
 
-        // Also check if admin is deleted (soft delete logic for admins)
-        if (user.getRole() == User.Role.ADMIN) {
-            // Admin admin = adminRepository.findByUserId(user.getId())... check deleted
-            // But let's assume PENDING/ACTIVE status covers it for now as per previous
-            // logic.
-        }
+        // Account status check (currently relaxed)
+        System.out.println("Account status: " + user.getStatus());
 
         // Generate JWT token
         String token = jwtService.generateToken(user.getId(), user.getRole().name());
+        System.out.println("🎟️ JWT token generated for user ID: " + user.getId());
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("token", token);
         response.put("role", user.getRole().name());
         response.put("userId", user.getId());
-        if (user.getStatus() != VerificationStatus.ACTIVE){
+        response.put("name", user.getName());
+
+        if (user.getStatus() != VerificationStatus.ACTIVE) {
             response.put("status", "PENDING");
-        }else{
+            System.out.println("⚠️ Login allowed but account status is PENDING");
+        } else {
             response.put("status", "ACTIVE");
+            System.out.println("✅ Account is ACTIVE");
         }
+
+        System.out.println("🔓 Login successful for user ID: " + user.getId());
 
         return response;
     }
+
 
     public Map<String, Object> getPatientProfile(Long userId) {
 
@@ -466,7 +465,7 @@ public class AuthService {
         response.put("state", patient.getState());
         response.put("country", patient.getCountry());
         response.put("pincode", patient.getPincode());
-        response.put("idProof", patient.getIdProofPath());
+        response.put("idProofPath", patient.getIdProofPath());
 
         // ---- Lifestyle Details ----
         response.put("sleepHours", patient.getSleepHours());
@@ -524,6 +523,8 @@ public class AuthService {
         response.put("qualification", doctor.getQualification());
         response.put("experience", doctor.getExperience());
         response.put("consultationFee", doctor.getConsultationFee());
+        response.put("rating", doctor.getAverageRating());
+        response.put("ratingCount", doctor.getRatingCount());
 
         /* ---------- CLINIC INFO ---------- */
         response.put("clinicHospitalName", doctor.getClinicHospitalName());
@@ -644,6 +645,8 @@ public class AuthService {
             map.put("qualification", doctor.getQualification());
             map.put("experience", doctor.getExperience());
             map.put("consultationFee", doctor.getConsultationFee());
+            map.put("rating",doctor.getAverageRating());
+            map.put("ratingCount",doctor.getRatingCount());
 
             // Clinic Info
             map.put("clinicHospitalName", doctor.getClinicHospitalName());

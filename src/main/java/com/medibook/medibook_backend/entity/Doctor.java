@@ -59,12 +59,19 @@ public class Doctor implements Persistable<Long> {
     @Column(name = "consultationFee")
     private Integer consultationFee;
 
+    /* ================= RATING ================= */
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
+    /* ================= STATUS ================= */
     @Column(name = "acceptingAppointments")
     private Boolean acceptingAppointments = true;
 
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
-
 
     /* ================= JPA STATE ================= */
     @Transient
@@ -88,6 +95,26 @@ public class Doctor implements Persistable<Long> {
     @PostPersist
     void markNotNew() {
         this.isNew = false;
+    }
+
+    /* ================= BUSINESS LOGIC ================= */
+
+    public void addRating(int rating) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+
+        if (this.ratingCount == null) {
+            this.ratingCount = 0;
+        }
+
+        if (this.averageRating == null) {
+            this.averageRating = 0.0;
+        }
+
+        double total = this.averageRating * this.ratingCount;
+        this.ratingCount += 1;
+        this.averageRating = (total + rating) / this.ratingCount;
     }
 
     /* ================= GETTERS & SETTERS ================= */
@@ -217,11 +244,28 @@ public class Doctor implements Persistable<Long> {
         this.medicalLicensePath = medicalLicensePath;
     }
 
-    public Integer getConsultationFee(){
+    public Integer getConsultationFee() {
         return consultationFee;
     }
 
-    public void setConsultationFee(Integer consultationFee){
+    public void setConsultationFee(Integer consultationFee) {
         this.consultationFee = consultationFee;
     }
+
+    public Double getAverageRating() {
+        return averageRating;
+    }
+
+//    public void setAverageRating(Double averageRating) {
+//        this.averageRating = averageRating;
+//    }
+
+    public Integer getRatingCount() {
+        return ratingCount;
+    }
+
+//    public void setRatingCount(Integer ratingCount) {
+//        this.ratingCount = ratingCount;
+//    }
+
 }

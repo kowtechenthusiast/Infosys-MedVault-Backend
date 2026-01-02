@@ -1,10 +1,9 @@
 package com.medibook.medibook_backend.controller;
 
 import com.medibook.medibook_backend.dto.CompleteDoctorProfileRequest;
-import com.medibook.medibook_backend.service.AppointmentService;
-import com.medibook.medibook_backend.service.AuthService;
-import com.medibook.medibook_backend.service.DoctorSlotService;
-import com.medibook.medibook_backend.service.FileStorageService;
+import com.medibook.medibook_backend.entity.DoctorRating;
+import com.medibook.medibook_backend.repository.DoctorRatingRepository;
+import com.medibook.medibook_backend.service.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +22,17 @@ public class DoctorController {
     private final FileStorageService fileStorageService;
     private final DoctorSlotService slotService;
     private final AppointmentService appointmentService;
+    private final DoctorRatingRepository ratingRepo;
+    private final DoctorService ratingService;
 
-    public DoctorController(AuthService authService, FileStorageService fileStorageService, DoctorSlotService slotService, AppointmentService appointmentService) {
+
+    public DoctorController(AuthService authService, FileStorageService fileStorageService, DoctorSlotService slotService, AppointmentService appointmentService, DoctorRatingRepository ratingRepo, DoctorService ratingService) {
         this.authService = authService;
         this.fileStorageService = fileStorageService;
         this.slotService = slotService;
         this.appointmentService = appointmentService;
+        this.ratingRepo = ratingRepo;
+        this.ratingService = ratingService;
     }
 
 
@@ -56,19 +60,33 @@ public class DoctorController {
                 @RequestPart(value = "medicalLicense", required = false) MultipartFile medicalLicense
         ) {
 
+            System.out.println("🔹 updateProfile API called");
+            System.out.println("User ID: " + userId);
+
             try {
                 String medicalLicensePath = null;
 
                 if (medicalLicense != null && !medicalLicense.isEmpty()) {
+                    System.out.println("Medical license received: " + medicalLicense.getOriginalFilename());
+                    System.out.println("Content type: " + medicalLicense.getContentType());
+
                     String contentType = medicalLicense.getContentType();
                     if (contentType == null ||
                             (!contentType.equals("application/pdf") && !contentType.startsWith("image/"))) {
+
+                        System.out.println("❌ Invalid medical license format");
+
                         return ResponseEntity.badRequest()
-                                .body(Map.of("success", false,
-                                        "message", "Invalid medical license format. Upload PDF or image."));
+                                .body(Map.of(
+                                        "success", false,
+                                        "message", "Invalid medical license format. Upload PDF or image."
+                                ));
                     }
 
                     medicalLicensePath = fileStorageService.saveDoctorCertificate(medicalLicense);
+                    System.out.println("✅ Medical license saved at: " + medicalLicensePath);
+                } else {
+                    System.out.println("ℹ️ No medical license uploaded");
                 }
 
                 CompleteDoctorProfileRequest request = new CompleteDoctorProfileRequest();
@@ -89,14 +107,26 @@ public class DoctorController {
                 request.setConsultationFee(consultationFee);
                 request.setMedicalLicensePath(medicalLicensePath);
 
+                System.out.println("📤 Sending profile completion request to service");
+
                 Map<String, Object> response = authService.completeDoctorProfile(request);
+
+                System.out.println("✅ Doctor profile updated successfully");
+
                 return ResponseEntity.ok(response);
 
             } catch (Exception e) {
+                System.out.println("❌ Error in updateProfile: " + e.getMessage());
+                e.printStackTrace();
+
                 return ResponseEntity.badRequest()
-                        .body(Map.of("success", false, "message", e.getMessage()));
+                        .body(Map.of(
+                                "success", false,
+                                "message", e.getMessage()
+                        ));
             }
         }
+
     @GetMapping("/{userId}")
     public ResponseEntity<Map<String, Object>> getDoctorProfile(@PathVariable Long userId) {
 
@@ -156,6 +186,35 @@ public class DoctorController {
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    @GetMapping("/doctor/{doctorId}/my-rating")
+    public Integer getMyRating(
+            @PathVariable Long doctorId,
+            @RequestParam Long patientId
+    ) {
+        return ratingRepo
+                .findByDoctor_IdAndPatient_Id(doctorId, patientId)
+                .map(DoctorRating::getRating)
+                .orElse(null);
+    }
+
+
+
+        /* ======================================================
+           RATE A DOCTOR (ONCE)
+           ====================================================== */
+    @PostMapping("/patient/doctor-rating")
+    public void rateDoctor(@RequestBody Map<String, Object> body) {
+
+        Long doctorId = Long.valueOf(body.get("doctorId").toString());
+        Long patientId = Long.valueOf(body.get("patientId").toString());
+        Integer rating = Integer.valueOf(body.get("rating").toString());
+
+        ratingService.rateDoctor(doctorId, patientId, rating);
+    }
+
+
+
 
 
     // -------------------------------

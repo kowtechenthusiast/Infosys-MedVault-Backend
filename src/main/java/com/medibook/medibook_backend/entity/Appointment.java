@@ -1,11 +1,14 @@
 package com.medibook.medibook_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(
         name = "appointment",
         uniqueConstraints = @UniqueConstraint(
@@ -19,24 +22,24 @@ import java.time.LocalTime;
 )
 public class Appointment {
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonIgnoreProperties({"appointments"})
+    private Patient patient;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonIgnore
+    private Doctor doctor;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonIgnore
+    private DoctorAvailability slot;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /* ================= PATIENT ================= */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
-
-    /* ================= DOCTOR ================= */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private Doctor doctor;
-
-    /* ================= SLOT ================= */
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "slot_id", nullable = false)
-    private DoctorAvailability slot;
+    @Column(name= "reason")
+    private String reason;
 
     /* ================= SNAPSHOT (CRITICAL) ================= */
     @Column(name = "appointment_date", nullable = false)
@@ -125,6 +128,14 @@ public class Appointment {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
     public LocalDateTime getCancelledAt() {

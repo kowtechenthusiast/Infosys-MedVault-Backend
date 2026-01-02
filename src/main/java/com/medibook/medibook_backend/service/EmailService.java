@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,6 +16,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String adminEmail;
 
+    @Async
     public void sendApprovalEmail(String toEmail, String name, String tempPassword) {
         String subject = "MedVault Account Approved";
         String message = "Hello " + name + ",\n\n"
@@ -52,6 +54,7 @@ public class EmailService {
     /**
      * Send OTP email for registration
      */
+    @Async
     public void sendOtpEmail(String toEmail, String name, String otpCode) {
         String subject = "MedVault - Your OTP Code";
         String message = "Hello " + name + ",\n\n" +
@@ -76,6 +79,7 @@ public class EmailService {
     /**
      * Send approval email (new flow without temp password)
      */
+    @Async
     public void sendApprovalEmailNew(String toEmail, String name) {
         String subject = "MedVault Account Approved";
         String message = "Hello " + name + ",\n\n" +

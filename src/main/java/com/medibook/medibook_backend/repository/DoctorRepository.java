@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
 
-    Optional<Doctor> findByUserId(Long userId);
+    Optional<Doctor> findByUser_Id(Long userId);
 
     boolean existsByUserId(Long userId);   // ✅ ADD THIS
 
