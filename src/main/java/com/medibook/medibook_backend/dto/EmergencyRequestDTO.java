@@ -1,15 +1,15 @@
 package com.medibook.medibook_backend.dto;
 
 import com.medibook.medibook_backend.entity.EmergencyRequest.EmergencyStatus;
-import java.time.LocalDateTime;
+import com.medibook.medibook_backend.entity.EmergencyRequest.SeverityLevel;
 
 public record EmergencyRequestDTO(
         Long id,
-        Long patientId,
-        String patientName,
-        String phone,
+        PatientEmergencyDTO patient,
+        DoctorEmergencyDTO doctor,
+        SeverityLevel severityLevel,
+        String location,
         String message,
-        String timestamp, // Formatted for frontend (e.g., "2 mins ago")
-        EmergencyStatus status,
-        String acceptedByDoctorName
+        String timestamp,
+        EmergencyStatus status
 ) {}
