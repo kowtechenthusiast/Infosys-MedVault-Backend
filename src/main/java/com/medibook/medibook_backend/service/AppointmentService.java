@@ -254,17 +254,28 @@ public class AppointmentService {
 
 
 
-        public List<UpcomingAppointmentDTO> getUpcomingAppointments(Long userId) {
-            return appointmentRepository.findUpcomingAppointments(
-                    userId,
-                    LocalDate.now(),
-                    LocalTime.now()
-            );
-        }
+    public List<UpcomingAppointmentDTO> getUpcomingAppointments(Long userId) {
+
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        System.out.println("[Service] getUpcomingAppointments started");
+        System.out.println("[Service] userId = " + userId);
+        System.out.println("[Service] date = " + today);
+        System.out.println("[Service] time = " + now);
+
+        List<UpcomingAppointmentDTO> appointments =
+                appointmentRepository.findUpcomingAppointments(userId);
+
+        System.out.println("[Service] fetched appointments = " + appointments.size());
+
+        return appointments;
+    }
 
 
 
-//
+
+    //
         @Transactional
         public void rescheduleAppointment(
                 Long appointmentId,

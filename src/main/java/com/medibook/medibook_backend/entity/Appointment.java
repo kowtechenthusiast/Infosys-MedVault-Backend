@@ -41,6 +41,9 @@ public class Appointment {
     @Column(name= "reason")
     private String reason;
 
+    Boolean rated;
+
+
     /* ================= SNAPSHOT (CRITICAL) ================= */
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
@@ -92,6 +95,14 @@ public class Appointment {
 
     public Doctor getDoctor() {
         return doctor;
+    }
+
+    public Boolean getRated() {
+        return rated;
+    }
+
+    public void setRated(Boolean flag) {
+        this.rated = flag;
     }
 
     public void setDoctor(Doctor doctor) {

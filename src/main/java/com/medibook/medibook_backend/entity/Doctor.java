@@ -256,16 +256,16 @@ public class Doctor implements Persistable<Long> {
         return averageRating;
     }
 
-//    public void setAverageRating(Double averageRating) {
-//        this.averageRating = averageRating;
-//    }
+    public void setAverageRating(Double averageRating) {
+        this.averageRating = averageRating;
+    }
 
     public Integer getRatingCount() {
         return ratingCount;
     }
 
-//    public void setRatingCount(Integer ratingCount) {
-//        this.ratingCount = ratingCount;
-//    }
+    public void setRatingCount(Integer ratingCount) {
+        this.ratingCount = ratingCount;
+    }
 
 }

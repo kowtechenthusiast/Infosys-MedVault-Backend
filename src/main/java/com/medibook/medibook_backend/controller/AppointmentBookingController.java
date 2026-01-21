@@ -92,8 +92,16 @@ public class AppointmentBookingController {
     public List<UpcomingAppointmentDTO> getUpcomingAppointments(
             @RequestParam("userId") Long userId
     ) {
-        return appointmentService.getUpcomingAppointments(userId);
+        System.out.println("[Controller] /upcoming called");
+        System.out.println("[Controller] userId = " + userId);
+
+        List<UpcomingAppointmentDTO> result =
+                appointmentService.getUpcomingAppointments(userId);
+
+        System.out.println("[Controller] upcoming appointments count = " + result.size());
+        return result;
     }
+
 
 
     @GetMapping("/getAllAppointment")

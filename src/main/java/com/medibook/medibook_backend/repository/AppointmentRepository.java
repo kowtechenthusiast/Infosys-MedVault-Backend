@@ -42,6 +42,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     boolean existsBySlot_Id(Long slotId);
 
+
     @Query("""
     SELECT new com.medibook.medibook_backend.dto.UpcomingAppointmentDTO(
         a.id,
@@ -60,22 +61,23 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         a.appointmentDate,
         a.appointmentTime,
         a.status,
-        a.reason
+        a.reason,
+        a.rated,
+        r.rating,
+        r.review
     )
     FROM Appointment a
     JOIN a.doctor d
+    LEFT JOIN com.medibook.medibook_backend.entity.DoctorRating r
+           ON r.appointment = a
     WHERE a.patient.id = :userId
-      AND a.status IN ('REQUESTED', 'CONFIRMED')
-      AND (
-           a.appointmentDate > :today
-           OR (a.appointmentDate = :today AND a.appointmentTime > :now)
-      )
+      AND a.status IN ('REQUESTED', 'CONFIRMED', 'REJECTED', 'COMPLETED')
     ORDER BY a.appointmentDate, a.appointmentTime
 """)
-    List<UpcomingAppointmentDTO> findUpcomingAppointments(
-            Long userId,
-            LocalDate today,
-            LocalTime now
-    );
+    List<UpcomingAppointmentDTO> findUpcomingAppointments(@Param("userId") Long userId);
+
+
+
+
     Optional<Appointment> findByIdAndPatient_Id(Long id, Long patientId);
 }

@@ -187,31 +187,13 @@ public class DoctorController {
         }
     }
 
-    @GetMapping("/doctor/{doctorId}/my-rating")
-    public Integer getMyRating(
-            @PathVariable Long doctorId,
-            @RequestParam Long patientId
-    ) {
-        return ratingRepo
-                .findByDoctor_IdAndPatient_Id(doctorId, patientId)
-                .map(DoctorRating::getRating)
-                .orElse(null);
-    }
 
 
 
         /* ======================================================
            RATE A DOCTOR (ONCE)
            ====================================================== */
-    @PostMapping("/patient/doctor-rating")
-    public void rateDoctor(@RequestBody Map<String, Object> body) {
 
-        Long doctorId = Long.valueOf(body.get("doctorId").toString());
-        Long patientId = Long.valueOf(body.get("patientId").toString());
-        Integer rating = Integer.valueOf(body.get("rating").toString());
-
-        ratingService.rateDoctor(doctorId, patientId, rating);
-    }
 
 
 
