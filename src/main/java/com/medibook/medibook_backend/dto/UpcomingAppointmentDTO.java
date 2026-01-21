@@ -18,7 +18,7 @@ public class UpcomingAppointmentDTO {
     private String phone;
     private String city;
     private String state;
-    private Integer consultationFee;
+    private Integer consultationFee;   // ✅ FIXED (Integer)
     private Double averageRating;
     private Integer ratingCount;
 
@@ -28,6 +28,12 @@ public class UpcomingAppointmentDTO {
     private Appointment.Status status;
     private String reason;
 
+    /* ================= RATING ================= */
+    private Boolean rated;
+    private Integer rating;
+    private String review;
+
+    /* ================= CONSTRUCTOR ================= */
     public UpcomingAppointmentDTO(
             Long id,
             Long doctorId,
@@ -39,13 +45,16 @@ public class UpcomingAppointmentDTO {
             String phone,
             String city,
             String state,
-            Integer consultationFee,
+            Integer consultationFee,     // ✅ FIXED
             Double averageRating,
             Integer ratingCount,
             LocalDate appointmentDate,
             LocalTime appointmentTime,
             Appointment.Status status,
-            String reason
+            String reason,
+            Boolean rated,
+            Integer rating,
+            String review
     ) {
         this.id = id;
         this.doctorId = doctorId;
@@ -64,10 +73,12 @@ public class UpcomingAppointmentDTO {
         this.appointmentTime = appointmentTime;
         this.status = status;
         this.reason = reason;
+        this.rated = rated;
+        this.rating = rating;
+        this.review = review;
     }
 
-    /* ================= GETTERS ================= */
-
+/* ================= GETTERS ================= */
     public Long getId() { return id; }
     public Long getDoctorId() { return doctorId; }
     public String getDoctorName() { return doctorName; }
@@ -85,4 +96,7 @@ public class UpcomingAppointmentDTO {
     public LocalTime getAppointmentTime() { return appointmentTime; }
     public Appointment.Status getStatus() { return status; }
     public String getReason() { return reason; }
+    public Boolean getRated() { return rated; }
+    public Integer getRating() { return rating; }
+    public String getReview() { return review; }
 }

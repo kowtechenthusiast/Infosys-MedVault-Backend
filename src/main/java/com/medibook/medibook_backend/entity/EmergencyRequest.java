@@ -15,16 +15,19 @@ public class EmergencyRequest {
     @JoinColumn(name = "patient_id")
     private Patient patient;
 
-    // Optional initially: Doctor who accepts the request
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
     @Column(nullable = false)
-    private String contactNumber;
+    private String location;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SeverityLevel severityLevel;
 
     @Enumerated(EnumType.STRING)
     private EmergencyStatus status = EmergencyStatus.PENDING;
@@ -33,10 +36,18 @@ public class EmergencyRequest {
     private LocalDateTime acceptedAt;
 
 
+
     public enum EmergencyStatus {
         PENDING,
         ACCEPTED,
         IGNORED
+    }
+
+    public enum SeverityLevel {
+        LOW,
+        MEDIUM,
+        HIGH,
+        CRITICAL
     }
 
     @PrePersist
@@ -44,7 +55,6 @@ public class EmergencyRequest {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters ...
     /* ================= GETTERS & SETTERS ================= */
 
     public Long getId() {
@@ -71,20 +81,28 @@ public class EmergencyRequest {
         this.doctor = doctor;
     }
 
-    public String getContactNumber() {
-        return contactNumber;
-    }
-
-    public void setContactNumber(String contactNumber) {
-        this.contactNumber = contactNumber;
-    }
-
     public String getMessage() {
         return message;
     }
 
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public SeverityLevel getSeverityLevel() {
+        return severityLevel;
+    }
+
+    public void setSeverityLevel(SeverityLevel severityLevel) {
+        this.severityLevel = severityLevel;
     }
 
     public EmergencyStatus getStatus() {

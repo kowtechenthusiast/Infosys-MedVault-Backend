@@ -5,10 +5,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "doctor_rating",
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"doctor_id", "patient_id"}
-        )
+        name = "doctor_ratings",
+        uniqueConstraints = @UniqueConstraint(columnNames = "appointment_id")
 )
 public class DoctorRating {
 
@@ -17,34 +15,48 @@ public class DoctorRating {
     private Long id;
 
     /* ================= RELATIONS ================= */
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "patient_id")
-    private Patient patient;
+    private User patient;
 
-    /* ================= RATING ================= */
+    @OneToOne(optional = false)
+    @JoinColumn(name = "appointment_id", unique = true)
+    private Appointment appointment;
+
+    /* ================= RATING DATA ================= */
+
     @Column(nullable = false)
     private Integer rating; // 1–5
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime ratedAt;
+    @Column(length = 500)
+    private String review;
 
-    @PrePersist
-    void onCreate() {
-        ratedAt = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    /* ================= VALIDATION ================= */
+
+    public void validate() {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
     }
 
     /* ================= GETTERS & SETTERS ================= */
-    public Integer getRating() {
-        return rating;
+    public Long getId() {
+        return id;
     }
 
-    public void setRating(Integer rating) {
-        this.rating = rating;
+    public void setId(Long id) {
+        this.id = id;
     }
+
+    /* ================= RELATIONS ================= */
 
     public Doctor getDoctor() {
         return doctor;
@@ -54,11 +66,46 @@ public class DoctorRating {
         this.doctor = doctor;
     }
 
-    public Patient getPatient() {
+    public User getPatient() {
         return patient;
     }
 
-    public void setPatient(Patient patient) {
+    public void setPatient(User patient) {
         this.patient = patient;
     }
+
+    public Appointment getAppointment() {
+        return appointment;
+    }
+
+    public void setAppointment(Appointment appointment) {
+        this.appointment = appointment;
+    }
+
+    /* ================= RATING DATA ================= */
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public void setRating(Integer rating) {
+        this.rating = rating;
+    }
+
+    public String getReview() {
+        return review;
+    }
+
+    public void setReview(String review) {
+        this.review = review;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
 }
